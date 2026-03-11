@@ -1,0 +1,385 @@
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, Scissors, User, Calendar, Check, ArrowRight, Sparkles, Sun, Moon, Mail, Phone, AtSign } from 'lucide-react';
+
+// Генерация дат
+const getUpcomingDays = (count) => {
+  const months = [
+    'Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня',
+    'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'
+  ];
+  const daysOfWeek = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+  
+  const days = [];
+  const startDate = new Date(); 
+
+  for (let i = 0; i < count; i++) {
+    const current = new Date(startDate);
+    current.setDate(startDate.getDate() + i);
+    
+    days.push({
+      day: daysOfWeek[current.getDay()],
+      num: current.getDate(),
+      full: `${current.getDate()} ${months[current.getMonth()]}`,
+      id: current.getTime()
+    });
+  }
+  return days;
+};
+
+const FadeIn = ({ children, delay = 0 }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), delay + 50);
+    return () => clearTimeout(timer);
+  }, [delay]);
+
+  return (
+    <div className={`transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] transform ${
+      isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-[0.98]'
+    }`}>
+      {children}
+    </div>
+  );
+};
+
+export default function App() {
+  const [step, setStep] = useState(0);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const upcomingDays = getUpcomingDays(7); 
+  
+  const [userData, setUserData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+  });
+
+  const [bookingData, setBookingData] = useState({
+    service: null,
+    master: null,
+    date: null,
+    time: null,
+  });
+  
+  const [activeDate, setActiveDate] = useState(upcomingDays[0].full);
+
+  useEffect(() => {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      setIsDarkMode(true);
+    }
+  }, []);
+
+  const nextStep = () => setStep((s) => Math.min(s + 1, 6));
+  const prevStep = () => setStep((s) => Math.max(s - 1, 0));
+
+  const handleUserInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const isUserFormValid = () => {
+    return userData.firstName && userData.lastName && userData.email && userData.phone;
+  };
+
+  const handleSelectService = (service) => {
+    setBookingData({ ...bookingData, service });
+    setTimeout(nextStep, 300);
+  };
+
+  const handleSelectMaster = (master) => {
+    setBookingData({ ...bookingData, master });
+    setTimeout(nextStep, 300);
+  };
+
+  const handleSelectDateTime = (date, time) => {
+    setBookingData({ ...bookingData, date, time });
+    setTimeout(nextStep, 300);
+  };
+
+  const resetBooking = () => {
+    setBookingData({ service: null, master: null, date: null, time: null });
+    setStep(0);
+  };
+
+  const inputClasses = `w-full bg-transparent border-b py-3 text-[17px] font-light focus:outline-none transition-all duration-300 
+    autofill:shadow-[0_0_0_30px_transparent_inset] 
+    ${isDarkMode 
+      ? 'border-white/10 focus:border-white text-white placeholder:text-white/20' 
+      : 'border-black/10 focus:border-black text-black placeholder:text-black/20'
+    }`;
+
+  const labelClasses = "text-[11px] font-semibold tracking-[0.1em] uppercase text-[#86868B] mb-1 block";
+
+  return (
+    <div className={`min-h-screen transition-colors duration-700 font-sans flex flex-col items-center justify-center p-6 antialiased overflow-hidden
+      ${isDarkMode ? 'bg-[#000000] text-[#F5F5F7] selection:bg-white selection:text-black' : 'bg-[#F5F5F7] text-[#1D1D1F] selection:bg-black selection:text-white'}`}>
+      
+      {/* Глобальные стили для скрытия скроллбара и автозаполнения */}
+      <style>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus {
+          -webkit-text-fill-color: ${isDarkMode ? '#FFFFFF' : '#000000'};
+          -webkit-box-shadow: 0 0 0px 1000px transparent inset;
+          transition: background-color 5000s ease-in-out 0s;
+          caret-color: ${isDarkMode ? 'white' : 'black'};
+        }
+        
+        /* Скрытие скроллбара для всех браузеров */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+
+      {/* Navigation */}
+      <div className="w-full max-w-md flex justify-between items-center mb-12 h-12 z-10">
+        {step > 0 && step < 6 ? (
+          <button onClick={prevStep} className={`flex items-center hover:opacity-50 transition-opacity duration-300 group ${isDarkMode ? 'text-white' : 'text-[#1D1D1F]'}`}>
+            <ChevronLeft className="w-5 h-5 -ml-1 stroke-[2] group-active:-translate-x-1 transition-transform" />
+            <span className="text-[15px] font-medium tracking-tight">Назад</span>
+          </button>
+        ) : <div className="w-16" />}
+        
+        {step > 0 && step < 6 && (
+          <div className="text-[10px] font-semibold tracking-[0.2em] text-[#86868B] uppercase">
+            Шаг {step} из 5
+          </div>
+        )}
+        
+        <div className="w-16 flex justify-end">
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className={`p-2 rounded-full transition-colors duration-300 ${isDarkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-black/5 text-[#1D1D1F]'}`}>
+            {isDarkMode ? <Sun className="w-5 h-5 stroke-[1.5]" /> : <Moon className="w-5 h-5 stroke-[1.5]" />}
+          </button>
+        </div>
+      </div>
+
+      <div className="w-full max-w-md relative flex flex-col">
+        
+        {/* Step 0: Welcome */}
+        {step === 0 && (
+          <FadeIn>
+            <div className="flex flex-col items-center text-center mt-12">
+              <div className={`mb-14 p-6 backdrop-blur-2xl rounded-[2rem] shadow-[0_8px_32px_rgba(0,0,0,0.04)] transition-colors duration-500
+                ${isDarkMode ? 'bg-[#1C1C1E]/60 border border-white/10' : 'bg-white/50 border border-white/60'}`}>
+                 <Scissors className={`w-8 h-8 stroke-[1] ${isDarkMode ? 'text-white' : 'text-[#1D1D1F]'}`} />
+              </div>
+              <h1 className={`text-[42px] leading-none font-light tracking-[0.35em] mb-6 ml-4 ${isDarkMode ? 'text-white' : 'text-[#1D1D1F]'}`}>
+                ATELIER
+              </h1>
+              <p className="text-[17px] text-[#86868B] mb-24 font-light max-w-[260px] leading-relaxed tracking-wide">
+                Форма следует за функцией.<br/>Ваша идеальная эстетика.
+              </p>
+              <button onClick={nextStep} className={`group relative px-10 py-5 w-full max-w-[260px] rounded-full transition-all duration-400 hover:scale-[1.01] active:scale-[0.96] overflow-hidden
+                ${isDarkMode ? 'bg-[#F5F5F7] text-black' : 'bg-black text-white'}`}>
+                <div className="flex items-center justify-center space-x-3">
+                  <span className="text-[15px] font-medium tracking-wider uppercase">Начать</span>
+                  <ArrowRight className="w-4 h-4 stroke-[2]" />
+                </div>
+              </button>
+            </div>
+          </FadeIn>
+        )}
+
+        {/* Step 1: Registration */}
+        {step === 1 && (
+          <FadeIn key="step1">
+            <h2 className="text-[28px] leading-tight font-medium mb-10 tracking-tight text-center">Создание профиля</h2>
+            <div className={`p-8 rounded-[32px] space-y-8 transition-colors duration-500 ${isDarkMode ? 'bg-[#1C1C1E]/40 border border-white/5' : 'bg-white shadow-[0_24px_48px_rgba(0,0,0,0.02)]'}`}>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className={labelClasses}>Имя</label>
+                  <input type="text" name="firstName" autoComplete="given-name" value={userData.firstName} onChange={handleUserInputChange} placeholder="Имя" className={inputClasses} />
+                </div>
+                <div>
+                  <label className={labelClasses}>Фамилия</label>
+                  <input type="text" name="lastName" autoComplete="family-name" value={userData.lastName} onChange={handleUserInputChange} placeholder="Фамилия" className={inputClasses} />
+                </div>
+              </div>
+              <div>
+                <label className={labelClasses}>Электронная почта</label>
+                <div className="relative">
+                  <Mail className="absolute right-0 top-3 w-4 h-4 text-[#86868B] opacity-50 pointer-events-none" />
+                  <input type="email" name="email" autoComplete="email" value={userData.email} onChange={handleUserInputChange} placeholder="email@example.com" className={inputClasses} />
+                </div>
+              </div>
+              <div>
+                <label className={labelClasses}>Телефон</label>
+                <div className="relative">
+                  <Phone className="absolute right-0 top-3 w-4 h-4 text-[#86868B] opacity-50 pointer-events-none" />
+                  <input type="tel" name="phone" autoComplete="tel" value={userData.phone} onChange={handleUserInputChange} placeholder="+7" className={inputClasses} />
+                </div>
+              </div>
+            </div>
+            <button 
+              disabled={!isUserFormValid()}
+              onClick={nextStep}
+              className={`w-full mt-10 py-5 rounded-full text-[16px] font-medium tracking-wide transition-all duration-400
+                ${isUserFormValid() 
+                  ? (isDarkMode ? 'bg-[#F5F5F7] text-black shadow-lg hover:scale-[1.01]' : 'bg-black text-white shadow-lg hover:scale-[1.01]') 
+                  : 'bg-[#86868B]/20 text-[#86868B] cursor-not-allowed opacity-50'}`}
+            >
+              Продолжить
+            </button>
+          </FadeIn>
+        )}
+
+        {/* Step 2: Services */}
+        {step === 2 && (
+          <FadeIn key="step2">
+            <h2 className="text-[28px] leading-tight font-medium mb-10 tracking-tight text-center">Выбор услуги</h2>
+            <div className="space-y-4">
+              {[
+                { id: 'haircut', title: 'Стрижка', desc: 'Классика и тренды', duration: '60 мин', price: '3 500 ₽', icon: Scissors },
+                { id: 'beard', title: 'Борода', desc: 'Уход и контур', duration: '45 мин', price: '2 000 ₽', icon: User },
+                { id: 'combo', title: 'Комбо', desc: 'Полный комплекс', duration: '90 мин', price: '5 000 ₽', icon: Sparkles },
+              ].map((item) => (
+                <button key={item.id} onClick={() => handleSelectService(item)}
+                  className={`w-full p-5 rounded-[28px] transition-all duration-400 flex items-center justify-between
+                    ${bookingData.service?.id === item.id 
+                      ? (isDarkMode ? 'bg-[#1C1C1E] ring-1 ring-white/20 scale-[1.01]' : 'bg-white ring-1 ring-black/10 shadow-lg scale-[1.01]')
+                      : (isDarkMode ? 'bg-[#1C1C1E]/40 border border-white/10 opacity-70 hover:opacity-100' : 'bg-white/40 border border-white/60 opacity-70 hover:opacity-100')}`}>
+                  <div className="flex items-center space-x-5">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors
+                      ${bookingData.service?.id === item.id ? (isDarkMode ? 'bg-[#F5F5F7] text-black' : 'bg-black text-white') : (isDarkMode ? 'bg-[#2C2C2E]' : 'bg-white shadow-sm')}`}>
+                      <item.icon className="w-5 h-5 stroke-[1.5]" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="text-[17px] font-medium tracking-tight leading-tight">{item.title}</h3>
+                      <p className="text-[#86868B] text-[13px] font-light mt-1">{item.desc} &middot; {item.duration}</p>
+                    </div>
+                  </div>
+                  <span className="text-[15px] font-medium mr-3">{item.price}</span>
+                </button>
+              ))}
+            </div>
+          </FadeIn>
+        )}
+
+        {/* Step 3: Master */}
+        {step === 3 && (
+          <FadeIn key="step3">
+            <h2 className="text-[28px] leading-tight font-medium mb-10 tracking-tight text-center">Выбор мастера</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { id: 'm1', name: 'Александр', rank: 'Арт-директор' },
+                { id: 'm2', name: 'Давид', rank: 'Старший мастер' },
+                { id: 'm3', name: 'Марк', rank: 'Топ-барбер' },
+                { id: 'any', name: 'Любой', rank: 'Ближайшее время' },
+              ].map((master) => (
+                <button key={master.id} onClick={() => handleSelectMaster(master)}
+                  className={`p-6 py-8 rounded-[32px] transition-all duration-400 flex flex-col items-center text-center
+                    ${bookingData.master?.id === master.id 
+                      ? (isDarkMode ? 'bg-[#1C1C1E] ring-1 ring-white/20 scale-[1.01]' : 'bg-white ring-1 ring-black/10 shadow-lg scale-[1.01]')
+                      : (isDarkMode ? 'bg-[#1C1C1E]/40 border border-white/10 opacity-70 hover:opacity-100' : 'bg-white/40 border border-white/60 opacity-70 hover:opacity-100')}`}>
+                  <div className={`w-16 h-16 rounded-full mb-5 flex items-center justify-center text-[22px] font-light
+                    ${bookingData.master?.id === master.id ? (isDarkMode ? 'bg-[#F5F5F7] text-black' : 'bg-black text-white') : (isDarkMode ? 'bg-[#2C2C2E]' : 'bg-white shadow-sm')}`}>
+                    {master.name.charAt(0)}
+                  </div>
+                  <h3 className="text-[15px] font-medium tracking-tight">{master.name}</h3>
+                  <p className="text-[10px] text-[#86868B] uppercase tracking-[0.15em] mt-2">{master.rank}</p>
+                </button>
+              ))}
+            </div>
+          </FadeIn>
+        )}
+
+        {/* Step 4: Date/Time */}
+        {step === 4 && (
+          <FadeIn key="step4">
+            <h2 className="text-[28px] leading-tight font-medium mb-10 tracking-tight text-center">Дата и время</h2>
+            {/* Контейнер с датами - добавлен pt-4 и no-scrollbar */}
+            <div className="flex space-x-3 overflow-x-auto pt-4 pb-8 mb-4 no-scrollbar -mx-6 px-6">
+              {upcomingDays.map((d) => (
+                <button key={d.id} onClick={() => setActiveDate(d.full)}
+                  className={`flex-shrink-0 w-[76px] h-[104px] rounded-[28px] flex flex-col items-center justify-center transition-all duration-400 border
+                    ${activeDate === d.full 
+                      ? (isDarkMode ? 'bg-[#F5F5F7] border-[#F5F5F7] text-black shadow-lg scale-[1.05]' : 'bg-black border-black text-white shadow-lg scale-[1.05]')
+                      : (isDarkMode ? 'bg-[#1C1C1E]/40 border-white/10 text-[#86868B]' : 'bg-white/40 border-white/60 text-[#86868B]')}`}>
+                  <span className="text-[10px] uppercase font-bold tracking-[0.15em] mb-2">{d.day}</span>
+                  <span className="text-[24px] font-light leading-none">{d.num}</span>
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-4 gap-3 mt-4">
+              {['10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00', '20:30'].map((time) => (
+                <button key={time} onClick={() => handleSelectDateTime(activeDate, time)}
+                  className={`py-4 rounded-[20px] transition-all duration-300 text-[14px] font-medium
+                    ${bookingData.time === time
+                      ? (isDarkMode ? 'bg-[#F5F5F7] text-black' : 'bg-black text-white')
+                      : (isDarkMode ? 'bg-[#1C1C1E]/40 border-white/10 text-white hover:bg-white/5' : 'bg-white/40 border-white/60 text-black hover:bg-black/5')}`}>
+                  {time}
+                </button>
+              ))}
+            </div>
+          </FadeIn>
+        )}
+
+        {/* Step 5: Confirmation */}
+        {step === 5 && (
+          <FadeIn key="step5">
+             <h2 className="text-[28px] leading-tight font-medium mb-10 tracking-tight text-center">Ваш визит</h2>
+             <div className={`rounded-[32px] p-8 mb-8 relative overflow-hidden transition-colors duration-500
+                ${isDarkMode ? 'bg-[#1C1C1E] border border-white/5 shadow-2xl' : 'bg-white shadow-[0_24px_48px_rgba(0,0,0,0.04)] border border-black/[0.02]'}`}>
+                <div className={`absolute left-[-20px] top-[60%] w-10 h-10 rounded-full transition-colors ${isDarkMode ? 'bg-black' : 'bg-[#F5F5F7]'}`} />
+                <div className={`absolute right-[-20px] top-[60%] w-10 h-10 rounded-full transition-colors ${isDarkMode ? 'bg-black' : 'bg-[#F5F5F7]'}`} />
+                
+                <div className={`space-y-6 pb-8 border-b-[1.5px] border-dashed ${isDarkMode ? 'border-[#38383A]' : 'border-gray-100'}`}>
+                  <div>
+                    <p className={labelClasses}>Клиент</p>
+                    <p className={`text-[20px] font-medium leading-none ${isDarkMode ? 'text-white' : 'text-black'}`}>{userData.firstName} {userData.lastName}</p>
+                    <p className="text-[13px] text-[#86868B] mt-2 font-light">{userData.email} &middot; {userData.phone}</p>
+                  </div>
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className={labelClasses}>Услуга</p>
+                      <p className={`text-[20px] font-medium leading-none ${isDarkMode ? 'text-white' : 'text-black'}`}>{bookingData.service?.title}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className={labelClasses}>Мастер</p>
+                    <p className={`text-[20px] font-medium leading-none ${isDarkMode ? 'text-white' : 'text-black'}`}>{bookingData.master?.name}</p>
+                  </div>
+                  <div>
+                    <p className={labelClasses}>Время</p>
+                    <p className={`text-[20px] font-medium leading-none ${isDarkMode ? 'text-white' : 'text-black'}`}>{bookingData.date}, {bookingData.time}</p>
+                  </div>
+                </div>
+                <div className="pt-8 flex justify-between items-center px-1">
+                   <p className="text-[13px] text-[#86868B] font-medium uppercase tracking-widest">Итого</p>
+                   <p className={`text-[24px] font-medium ${isDarkMode ? 'text-white' : ''}`}>{bookingData.service?.price}</p>
+                </div>
+             </div>
+             <button onClick={nextStep} className={`w-full py-5 rounded-full text-[16px] font-medium tracking-wide shadow-lg hover:scale-[1.01] active:scale-[0.98] transition-all duration-400
+                  ${isDarkMode ? 'bg-[#F5F5F7] text-black' : 'bg-black text-white'}`}>
+                Подтвердить визит
+              </button>
+          </FadeIn>
+        )}
+
+        {/* Step 6: Success */}
+        {step === 6 && (
+          <FadeIn key="step6">
+            <div className="flex flex-col items-center text-center mt-20">
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-12 shadow-lg animate-pulse-slow
+                ${isDarkMode ? 'bg-[#F5F5F7]' : 'bg-black'}`}>
+                <Check className={`w-8 h-8 stroke-[2.5] ${isDarkMode ? 'text-black' : 'text-white'}`} />
+              </div>
+              <h2 className="text-[32px] font-medium mb-5">Превосходно.</h2>
+              <p className="text-[16px] text-[#86868B] mb-20 font-light max-w-[260px] leading-relaxed">
+                {userData.firstName}, мы забронировали для вас время.<br/>Ждем вас {bookingData.date} в {bookingData.time}.
+              </p>
+              <button onClick={resetBooking} className={`transition-colors font-medium text-[14px] border-b pb-1
+                  ${isDarkMode ? 'text-white/50 border-white/10 hover:text-white' : 'text-black/50 border-black/10 hover:text-black'}`}>
+                Вернуться на главную
+              </button>
+            </div>
+          </FadeIn>
+        )}
+      </div>
+    </div>
+  );
+}
